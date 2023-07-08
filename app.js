@@ -1,12 +1,26 @@
-const express = require('express');
-const axios = require('axios');
-require('dotenv').config();
+// const express = require('express');
+import express from 'express'
+import axios from 'axios'
+import dotenv from 'dotenv';
+import ejs from 'ejs';
+
+dotenv.config();
 
 const app = express();
+
+app.set('view engine', 'ejs');
 
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.redirect('/rundj');
+});
+
+app.get('/rundj', (req, res) => {
+  res.send('Welcome to the DJ page!');
+});
 
 app.post('/convert', async (req, res) => {
   const { videoId } = req.body;
