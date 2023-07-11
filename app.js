@@ -19,7 +19,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/rundj', (req, res) => {
-  res.send('Welcome to the DJ page!');
+  res.render('rundj');
 });
 
 app.post('/convert', async (req, res) => {
