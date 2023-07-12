@@ -44,7 +44,6 @@
       align-items: center;
       flex-direction:column;  
     }
-
     .logo-box{
       display: flex;
       flex-direction: column;
@@ -120,7 +119,7 @@
       color:#dd0425b6;
     }
     #add-button:active{
-      background-color:#dd04257e;
+      color:#dd04257e;
     }
     #add-button-wrap{
       background-color: transparent;
@@ -138,7 +137,7 @@
       color:#dd0425b6;
     }
     #delete-input-button:active{
-      background-color:#dd04257e;
+      color:#dd04257e;
     }
   
   </style>
@@ -154,7 +153,7 @@
         RunDJ
       </div>
       <div class="button-box" id="button-box">
-        <input type="text" name="videoId" id="videoId" placeholder="https://www.youtube.com">
+        <input type="text" name="videos" id="videoId" placeholder="https://www.youtube.com">
         <button id="add-button-wrap" type="button">
           <span class="material-symbols-outlined" id="add-button">
             loupe
@@ -163,18 +162,21 @@
       </div>
       <div id="new-input-box"></div>
     </div>
-    <button class="main-button" type="submit">Convert</button>
+    <button class="main-button" id="main-button" type="submit">Convert</button>
   </form>
   
   <script>
     const addButton = document.getElementById("add-button-wrap")
     const inputContainer = document.getElementById("new-input-box");
+    const mainButton = document.getElementById("main-button");
+    const form = document.querySelector("form");
     const maxInputs = 4;
+    let inputValues = [];
     let clicks = 0;
 
     addButton.addEventListener('click', () => {
       if (clicks > maxInputs) {
-        alert("O limite máximo de inputs é 5.");
+        alert("You can add a maximum of 5 links.");
         return;
       }
       clicks++;
@@ -184,7 +186,7 @@
 
       const newInput = document.createElement("input");
       newInput.type = "text";
-      newInput.name = "videoId";
+      newInput.name = "videos";
       newInput.classList.add('new-input')
       newInput.placeholder = "https://www.youtube.com";
 
@@ -195,14 +197,41 @@
       deleteButton.id = "delete-input-button";
       deleteButton.innerText = "delete";
 
-      deleteButton.addEventListener("click", function() {
+      deleteButton.addEventListener("click", () => {
         clicks--;
         inputContainer.removeChild(newInputBox);
+        const index = inputValues.indexOf(newInput.value);
+        if (index !== -1) {
+          inputValues.splice(index, 1);
+        }
       });
 
       newInputBox.appendChild(newInput);
       newInputBox.appendChild(deleteButton);
       inputContainer.appendChild(newInputBox);
+  });
+     mainButton.addEventListener('click', () => {
+      inputValues = [];
+
+      const inputs = document.querySelectorAll('input[name="videoId"]');
+      inputs.forEach((input) => {
+        inputValues.push(input.value);
+      });
+
+      fetch('/convert', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({videos:inputValues})
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
     });
   </script>
 </body>

@@ -15,15 +15,18 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.redirect('/rundj');
-});
-
-app.get('/rundj', (req, res) => {
   res.render('rundj');
 });
 
+
 app.post('/convert', async (req, res) => {
-  const { videoId } = req.body;
+  const { videos } = await req.body;
+  // const result = await getId(videos);
+  return res.json({
+    videos
+  });
+
+
 
   if (!videoId) {
     return res.json({
@@ -59,6 +62,53 @@ app.post('/convert', async (req, res) => {
     });
   }
 });
+
+
+const getId = async (links) => {
+  try {
+    if (typeof links === 'string') {
+      let videoId = "";
+      if (links.includes("youtube.com") || links.includes("youtu.be")) {
+        const videoIdMatch = links.match(/[?&]v=([^&#]*)/);
+        videoId = videoIdMatch && videoIdMatch[1];
+      } else {
+        throw new Error(`Invalid YouTube link: ${links}`);
+      }
+
+      if (!videoId) {
+        throw new Error(`Video ID not found in link: ${links}`);
+      }
+
+      return [videoId];
+    } else if (Array.isArray(links)) {
+      const videoIds = [];
+
+      for (const fullLink of links) {
+        let videoId = "";
+
+        if (fullLink.includes("youtube.com") || fullLink.includes("youtu.be")) {
+          const videoIdMatch = fullLink.match(/[?&]v=([^&#]*)/);
+          videoId = videoIdMatch && videoIdMatch[1];
+        } else {
+          throw new Error(`Invalid YouTube link: ${fullLink}`);
+        }
+
+        if (!videoId) {
+          throw new Error(`Video ID not found in link: ${fullLink}`);
+        }
+
+        videoIds.push(videoId);
+      }
+
+      return videoIds;
+    } else {
+      throw new Error("Invalid argument: links must be a string or an array");
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
 
 
 app.listen(PORT, () => {
