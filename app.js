@@ -1,4 +1,3 @@
-// const express = require('express');
 import express from 'express'
 import axios from 'axios'
 import dotenv from 'dotenv';
@@ -15,7 +14,7 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 
 dotenv.config();
 
-const prisma = new PrismaClient(); // Instancie o PrismaClient
+const prisma = new PrismaClient();
 
 
 const app = express();
@@ -39,111 +38,50 @@ app.use('/converted_audio', express.static(join(__dirname, 'converted_audio')));
 
 app.post('/convert', async (req, res) => {
   const value = req.body;
+  const convertedVideos = [];
 
-  const audioFileName = 'output';
-  const convertedVideos = []; // Array para armazenar os nomes dos vídeos convertidos
-
-  async function fetchVideo(url, audioFileName) {
-    return new Promise((resolve, reject) => {
+  async function fetchVideo(url) {
+    try {
       const videoStream = ytdl(url, { quality: 'highestaudio' });
+      const audioFileNameWithIndex = `${randomUUID()}.mp3`;
+      const audioFilePath = `/converted_audio/${audioFileNameWithIndex}`;
 
       const ffmpegCommand = ffmpeg(videoStream)
         .audioBitrate(128)
         .toFormat('mp3')
-        .save(join('converted_audio', audioFileName)) // Apenas o nome do arquivo, pois será salvo na pasta 'converted_audio'
-        .on('end', () => {
-          convertedVideos.push(audioFileName); // Adiciona o nome do vídeo convertido ao array
-          resolve();
-        })
-        .on('error', (err) => {
-          reject(err);
+        .save(join(__dirname, 'converted_audio', audioFileNameWithIndex));
+
+      return new Promise((resolve, reject) => {
+        ffmpegCommand.on('end', () => {
+          console.log('Done');
+          convertedVideos.push(audioFilePath);
+          resolve({ success: true, audioLink: audioFilePath });
+        }).on('error', (err) => {
+          reject({ success: false, error: err.message });
         });
-
-      ffmpegCommand.run();
-    });
+        ffmpegCommand.run();
+      });
+    } catch (err) {
+      console.log('Error', err);
+      return { success: false, error: err.message };
+    }
   }
-
 
   if (value.videos.length > 0) {
-    const promises = value.videos.map((v, index) => {
-      const audioFileNameWithIndex = `${audioFileName}_${index}.mp3`;
-      const filePath = join(__dirname, 'converted_audio', audioFileNameWithIndex);
-
-      return fetchVideo(v, audioFileNameWithIndex)
-        .then(() => {
-          console.log('Done');
-          // Após salvar o arquivo localmente, salve-o também no banco de dados usando o Prisma
-          return prisma.audio.create({
-            data: {
-              name: audioFileNameWithIndex,
-              path: filePath, // Salve o caminho completo do arquivo
-              id: randomUUID()
-            },
-          });
-        })
-        .catch((err) => {
-          console.log('Error', err);
-        });
-    });
+    const promises = value.videos.map((v) => fetchVideo(v));
 
     Promise.all(promises)
-      .then(async () => {
-        // Todos os vídeos foram convertidos
-
-        const audios = await prisma.audio.findMany();
-
-        // Envia os links dos vídeos convertidos para o front-end
-        return res.json({ success: true, videos: audios.map((audio) => `/audio/${audio.id}`) });
+      .then((results) => {
+        return res.json({ success: true, videos: results });
       })
       .catch((err) => {
-        console.log('Error', err);
-        return res.status(500).json({ error: 'Error converting videos' });
+        console.error('Error:', err);
+        return res.json({ success: false, error: err.message });
       });
-  } else {
-    return res.status(400).json({ error: 'No videos provided' });
   }
 });
 
-app.get('/download/:index', (req, res) => {
-  const index = req.params.index;
-  const audioFileNameWithIndex = `output_${index}.mp3`;
-  const filePath = join(__dirname, 'converted_audio', audioFileNameWithIndex);
 
-  res.download(filePath, (err) => {
-    if (err) {
-      console.error('Error downloading file:', err);
-      // Trate o erro de acordo com as suas necessidades
-      res.status(500).json({ error: 'Error downloading file' });
-    } else {
-      // O download foi concluído com sucesso
-    }
-  });
-});
-
-app.get('/audio/:id', async (req, res) => {
-  const audioId = parseInt(req.params.id, 10);
-
-  try {
-    const audio = await prisma.audio.findUnique({ where: { id: audioId } });
-
-    if (!audio) {
-      return res.status(404).json({ error: 'Audio not found' });
-    }
-
-    // Faça o download do arquivo MP3
-    res.download(audio.path, (err) => {
-      if (err) {
-        console.error('Error downloading file:', err);
-        res.status(500).json({ error: 'Error downloading file' });
-      } else {
-        // O download foi concluído com sucesso
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching audio:', error);
-    res.status(500).json({ error: 'Error fetching audio' });
-  }
-});
 
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`)

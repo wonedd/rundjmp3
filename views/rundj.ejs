@@ -226,40 +226,48 @@
       newInputBox.appendChild(deleteButton);
       inputContainer.appendChild(newInputBox);
     });
-  
+    function downloadAudio(audioLink, filename) {
+      const a = document.createElement('a');
+      a.href = audioLink;
+      a.download = filename;
+      a.click();
+    } 
     mainButton.addEventListener('click', (e) => {
-      console.log('chegou aqui')
-      e.preventDefault();
-      inputValues = [];
-  
-      const inputs = document.querySelectorAll('input[name="videos"]');
-      inputs.forEach((input) => {
-        inputValues.push(input.value);
-      });
-  
-      fetch('/convert', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ videos: inputValues })
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log(data)
-        // O código abaixo adiciona um link de download para cada vídeo convertido no elemento com o id "result-container"
-        const resultContainer = document.getElementById('result-container');
-        data.videos.forEach((video, index) => {
-          const downloadLink = document.createElement('a');
-          downloadLink.href = `/download/${index}`;
-          downloadLink.innerText = `Download Video ${index + 1}`;
-          resultContainer.appendChild(downloadLink);
+  console.log('chegou aqui');
+  e.preventDefault();
+  inputValues = [];
+
+  const inputs = document.querySelectorAll('input[name="videos"]');
+  inputs.forEach((input) => {
+    inputValues.push(input.value);
+  });
+
+  fetch('/convert', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ videos: inputValues })
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      const resultContainer = document.getElementById('result-container');
+      resultContainer.innerHTML = '';
+
+      data.videos.forEach((audioLink, index) => {
+        const downloadButton = document.createElement('button');
+        downloadButton.innerText = `Download Audio ${index + 1}`;
+        downloadButton.addEventListener('click', () => {
+          downloadAudio(audioLink.audioLink, `audio_${index + 1}.mp3`);
         });
-      })
-      .catch(error => {
-        console.error(error);
+        resultContainer.appendChild(downloadButton);
       });
+    })
+    .catch(error => {
+      console.error(error);
     });
+});
   </script>
 </body>
 </html>
