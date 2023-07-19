@@ -4,14 +4,19 @@ import axios from 'axios'
 import dotenv from 'dotenv';
 import ejs from 'ejs';
 import ytdl from 'ytdl-core';
+import { PrismaClient } from '@prisma/client';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg';
 import ffmpeg from 'fluent-ffmpeg';
+import { randomUUID } from 'crypto';
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 dotenv.config();
+
+const prisma = new PrismaClient(); // Instancie o PrismaClient
+
 
 const app = express();
 
@@ -62,9 +67,19 @@ app.post('/convert', async (req, res) => {
   if (value.videos.length > 0) {
     const promises = value.videos.map((v, index) => {
       const audioFileNameWithIndex = `${audioFileName}_${index}.mp3`;
+      const filePath = join(__dirname, 'converted_audio', audioFileNameWithIndex);
+
       return fetchVideo(v, audioFileNameWithIndex)
         .then(() => {
           console.log('Done');
+          // Após salvar o arquivo localmente, salve-o também no banco de dados usando o Prisma
+          return prisma.audio.create({
+            data: {
+              name: audioFileNameWithIndex,
+              path: filePath, // Salve o caminho completo do arquivo
+              id: randomUUID()
+            },
+          });
         })
         .catch((err) => {
           console.log('Error', err);
@@ -74,7 +89,7 @@ app.post('/convert', async (req, res) => {
     Promise.all(promises)
       .then(() => {
         // Todos os vídeos foram convertidos
-        return res.json({ success: true, videos: convertedVideos }); // Envia o array de nomes dos vídeos convertidos para o front-end
+        return res.json({ success: true, videos: convertedVideos });
       })
       .catch((err) => {
         console.log('Error', err);
@@ -101,7 +116,30 @@ app.get('/download/:index', (req, res) => {
   });
 });
 
+app.get('/audio/:id', async (req, res) => {
+  const audioId = parseInt(req.params.id, 10);
 
+  try {
+    const audio = await prisma.audio.findUnique({ where: { id: audioId } });
+
+    if (!audio) {
+      return res.status(404).json({ error: 'Audio not found' });
+    }
+
+    // Faça o download do arquivo MP3
+    res.download(audio.path, (err) => {
+      if (err) {
+        console.error('Error downloading file:', err);
+        res.status(500).json({ error: 'Error downloading file' });
+      } else {
+        // O download foi concluído com sucesso
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching audio:', error);
+    res.status(500).json({ error: 'Error fetching audio' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`)
