@@ -21,9 +21,15 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
+
 app.get('/', (req, res) => {
   res.render('rundj');
 });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+app.use('/converted_audio', express.static(join(__dirname, 'converted_audio')));
+
 
 
 app.post('/convert', async (req, res) => {
@@ -39,7 +45,7 @@ app.post('/convert', async (req, res) => {
       const ffmpegCommand = ffmpeg(videoStream)
         .audioBitrate(128)
         .toFormat('mp3')
-        .save(audioFileName)
+        .save(join('converted_audio', audioFileName)) // Apenas o nome do arquivo, pois será salvo na pasta 'converted_audio'
         .on('end', () => {
           convertedVideos.push(audioFileName); // Adiciona o nome do vídeo convertido ao array
           resolve();
@@ -51,6 +57,7 @@ app.post('/convert', async (req, res) => {
       ffmpegCommand.run();
     });
   }
+
 
   if (value.videos.length > 0) {
     const promises = value.videos.map((v, index) => {
@@ -81,9 +88,7 @@ app.post('/convert', async (req, res) => {
 app.get('/download/:index', (req, res) => {
   const index = req.params.index;
   const audioFileNameWithIndex = `output_${index}.mp3`;
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  const filePath = join(__dirname, audioFileNameWithIndex);
+  const filePath = join(__dirname, 'converted_audio', audioFileNameWithIndex);
 
   res.download(filePath, (err) => {
     if (err) {
