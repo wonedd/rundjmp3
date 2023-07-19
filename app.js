@@ -87,9 +87,13 @@ app.post('/convert', async (req, res) => {
     });
 
     Promise.all(promises)
-      .then(() => {
+      .then(async () => {
         // Todos os vídeos foram convertidos
-        return res.json({ success: true, videos: convertedVideos });
+
+        const audios = await prisma.audio.findMany();
+
+        // Envia os links dos vídeos convertidos para o front-end
+        return res.json({ success: true, videos: audios.map((audio) => `/audio/${audio.id}`) });
       })
       .catch((err) => {
         console.log('Error', err);
