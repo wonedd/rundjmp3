@@ -57,13 +57,13 @@ app.post('/convert', async (req, res) => {
           convertedVideos.push(audioFilePath);
           resolve({ success: true, audioLink: audioFilePath });
         }).on('error', (err) => {
-          reject({ success: false, error: err.message });
+          reject({ success: false, error: err });
         });
         ffmpegCommand.run();
       });
     } catch (err) {
       console.log('Error', err);
-      return { success: false, error: err.message };
+      return { success: false, error: err };
     }
   }
 
@@ -76,7 +76,7 @@ app.post('/convert', async (req, res) => {
       })
       .catch((err) => {
         console.error('Error:', err);
-        return res.json({ success: false, error: err.message });
+        return res.json({ success: false, error: err });
       });
   }
 });
