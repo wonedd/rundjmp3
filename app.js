@@ -3,7 +3,6 @@ import axios from 'axios'
 import dotenv from 'dotenv';
 import ejs from 'ejs';
 import ytdl from 'ytdl-core';
-import { PrismaClient } from '@prisma/client';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg';
@@ -13,8 +12,6 @@ import { randomUUID } from 'crypto';
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 dotenv.config();
-
-const prisma = new PrismaClient();
 
 
 const app = express();
@@ -30,45 +27,47 @@ app.get('/', (req, res) => {
   res.render('rundj');
 });
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-app.use('/converted_audio', express.static(join(__dirname, 'converted_audio')));
+const audioFolderPath = join(__dirname, 'converted_audio'); // Caminho absoluto para a pasta 'converted_audio'
 
+app.use('/converted_audio', express.static(audioFolderPath)); // Servindo arquivos da pasta 'converted_audio'
 
+async function saveMP3ToDatabase(url) {
+  try {
+    const videoStream = ytdl(url, { quality: 'highestaudio' });
+    const audioFileNameWithIndex = `${randomUUID()}.mp3`;
+    const audioFilePath = join(audioFolderPath, audioFileNameWithIndex); // Caminho absoluto para o arquivo MP3
+
+    const ffmpegCommand = ffmpeg(videoStream)
+      .audioBitrate(128)
+      .toFormat('mp3')
+      .save(audioFilePath);
+
+    return new Promise((resolve, reject) => {
+      ffmpegCommand.on('end', () => {
+        console.log('Done');
+        resolve({ success: true, audioLink: `/converted_audio/${audioFileNameWithIndex}` }); // Link relativo para o arquivo MP3
+      }).on('error', (err) => {
+        reject({ success: false, error: err.message });
+      });
+      ffmpegCommand.run();
+    });
+  } catch (err) {
+    console.log('Error', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// Restante do código...
 
 app.post('/convert', async (req, res) => {
   const value = req.body;
   const convertedVideos = [];
 
-  async function fetchVideo(url) {
-    try {
-      const videoStream = ytdl(url, { quality: 'highestaudio' });
-      const audioFileNameWithIndex = `${randomUUID()}.mp3`;
-      const audioFilePath = `/converted_audio/${audioFileNameWithIndex}`;
-
-      const ffmpegCommand = ffmpeg(videoStream)
-        .audioBitrate(128)
-        .toFormat('mp3')
-        .save(join(__dirname, 'converted_audio', audioFileNameWithIndex));
-
-      return new Promise((resolve, reject) => {
-        ffmpegCommand.on('end', () => {
-          console.log('Done');
-          convertedVideos.push(audioFilePath);
-          resolve({ success: true, audioLink: audioFilePath });
-        }).on('error', (err) => {
-          reject({ success: false, error: err });
-        });
-        ffmpegCommand.run();
-      });
-    } catch (err) {
-      console.log('Error', err);
-      return { success: false, error: err };
-    }
-  }
-
   if (value.videos.length > 0) {
-    const promises = value.videos.map((v) => fetchVideo(v));
+    const promises = value.videos.map((v) => saveMP3ToDatabase(v)); // Chama a função 'saveMP3ToDatabase' em vez de 'fetchVideo'
 
     Promise.all(promises)
       .then((results) => {
@@ -76,11 +75,10 @@ app.post('/convert', async (req, res) => {
       })
       .catch((err) => {
         console.error('Error:', err);
-        return res.json({ success: false, error: err });
+        return res.json({ success: false, error: err.message });
       });
   }
 });
-
 
 
 app.listen(PORT, () => {
