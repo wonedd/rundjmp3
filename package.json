@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "main": "app.js",
   "license": "MIT",
+  
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js"
   },
+  
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@prisma/client": "^5.0.0",
