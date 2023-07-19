@@ -245,6 +245,7 @@
     })
       .then(response => response.json())
       .then(data => {
+        console.log(data)
         // O código abaixo adiciona um link de download para cada vídeo convertido no elemento com o id "result-container"
         const resultContainer = document.getElementById('result-container');
         data.videos.forEach((video, index) => {
