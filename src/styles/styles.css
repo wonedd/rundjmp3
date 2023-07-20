@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;500;600;700&family=Poppins:wght@100;200;300;400;500;600&display=swap');
+  
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.material-symbols-outlined {
+  font-size: 64px;
+  color: #DD0426;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Montserrat Alternates', sans-serif;
+}
+
+body {
+  height: 100vh;
+  background: #222;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.logo-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #f7f7f7;
+}
+
+form {
+  padding: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+#new-input-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.button-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+input,
+button {
+  height: 38px;
+  border-radius: 8px;
+  outline: none;
+  border: none;
+}
+
+input {
+  background-color: #dd042530;
+  outline: 1px solid transparent;
+  padding: 8px;
+  color: #f7f7f7;
+  width: 300px;
+}
+
+.new-input {
+  margin-bottom: 0.8rem;
+}
+
+input:focus {
+  outline-color: #DD0426;
+}
+
+input::placeholder {
+  color: #f7f7f76b;
+  font-size: 0.8rem;
+}
+
+button {
+  background-color: #DD0426;
+  color: #f7f7f7;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #dd0425b6;
+}
+
+button:active {
+  background-color: #dd04257e;
+}
+
+#add-button {
+  display: block;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+#add-button:hover {
+  color: #dd0425b6;
+}
+
+#add-button:active {
+  color: #dd04257e;
+}
+
+#add-button-wrap {
+  background-color: transparent;
+}
+
+.main-button {
+  width: 347.6px;
+  margin-top: 8px;
+}
+
+#delete-input-button {
+  display: block;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+#delete-input-button:hover {
+  color: #dd0425b6;
+}
+
+#delete-input-button:active {
+  color: #dd04257e;
+}

@@ -9,8 +9,8 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "nodemon app.js",
-    "start": "node app.js"
+    "dev": "nodemon ./src/app.js",
+    "start": "node ./src/app.js"
   },
   
   "dependencies": {
